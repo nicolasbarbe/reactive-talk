@@ -1,0 +1,65 @@
+# Create a simple flux and how to evaluate it
+Flux<String> simpleFlux = Flux.just("One", "Two", "Three")
+simpleFlux.subscribe(System.out::println)
+simpleFlux = simpleFlux.log()
+simpleFlux.subscribe()
+
+# Playing with time
+Flux countToTen = Flux.interval(Duration.ofSeconds(1)).take(10);
+
+# Playing with github API
+
+WebClient.builder()
+    .baseUrl("https://api.github.com")
+    .defaultHeader(HttpHeaders.AUTHORIZATION, String.format("token %s", token))
+    .build();
+
+return client.get()
+	.uri("/users/{username}/repos", user)
+	.accept(MediaType.APPLICATION_JSON)
+	.retrieve()
+	.bodyToFlux(Repository.class);
+
+client.get()
+    .uri("/repos/{owner}/{repo}/contributors", owner, repo)
+    .accept(MediaType.APPLICATION_JSON)
+    .retrieve()
+    .bodyToFlux(Contributor.class);
+
+GitHubClient client = new GitHubClient(token)
+client.listRepositories("reactor").log().subscribe()
+client.listRepositories("reactor").filter(repo -> repo.getStargazers_count()>100).count().log().subscribe()
+client.listContributors("reactor", "reactor-core").log().subscribe()
+client.top10Contributors("reactor").log().subscribe()
+
+
+
+return ok().contentType(MediaType.TEXT_PLAIN).body( fromObject("foo") );
+
+return ok().contentType(MediaType.TEXT_PLAIN).body( fromObject("bar") );
+
+return ok().contentType(MediaType.TEXT_EVENT_STREAM).body(fibonacci, Long.class);
+
+ok().contentType(MediaType.TEXT_EVENT_STREAM).body( hotFlux, Long.class );
+
+ok().contentType(MediaType.TEXT_PLAIN).body(
+
+Flux.first(
+    us_service.get().uri("/ping").retrieve().bodyToMono(String.class),
+    eu_service.get().uri("/ping").retrieve().bodyToMono(String.class),
+    asia_service.get().uri("/ping").retrieve().bodyToMono(String.class)), String.class);
+
+recommendations_service.get().uri("/user/{username}/recommendations", username)
+    .retrieve()
+    .bodyToFlux(Book.class)
+    .timeout(Duration.ofMillis(100))
+    .onErrorResume( exception -> {
+        if(exception instanceof TimeoutException)
+            return cachedRecommendations(username);
+        else
+            return bestSellers();
+    } )
+    .switchIfEmpty( bestSellers() )
+    .take(5);
+
+    curl http://localhost:8003/suggestions --cookie "username=jdoe" | jq .

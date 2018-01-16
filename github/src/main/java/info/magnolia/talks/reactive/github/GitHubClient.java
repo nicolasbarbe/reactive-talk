@@ -54,7 +54,10 @@ public class GitHubClient {
      */
     public GitHubClient(String token) {
         
-        this.client = null;
+        this.client = WebClient.builder()
+                .baseUrl("https://api.github.com")
+                .defaultHeader(HttpHeaders.AUTHORIZATION, String.format("token %s", token))
+                .build();
     }
 
     /**
@@ -63,7 +66,11 @@ public class GitHubClient {
      */
     public Flux<Repository> listRepositories(String user) {
 
-        return Flux.empty();
+        return client.get()
+                .uri("/users/{username}/repos", user)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToFlux(Repository.class);
     }
 
     /**
@@ -72,7 +79,11 @@ public class GitHubClient {
      */
     public Flux<Contributor> listContributors(String owner, String repo) {
 
-        return Flux.empty();
+        return client.get()
+                .uri("/repos/{owner}/{repo}/contributors", owner, repo)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToFlux(Contributor.class);
     }
 
 

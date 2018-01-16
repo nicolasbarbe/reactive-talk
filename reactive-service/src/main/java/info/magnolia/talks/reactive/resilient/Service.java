@@ -104,24 +104,28 @@ public class Service {
     /// Handlers
     ///
     private Mono<ServerResponse> foo(ServerRequest request) {
-        return null;
+        return ok().contentType(MediaType.TEXT_PLAIN).body( fromObject("foo") );
     }
 
     private Mono<ServerResponse> bar(ServerRequest request) {
-        return null;
+        return ok().contentType(MediaType.TEXT_PLAIN).body( fromObject("bar") );
     }
 
     private Mono<ServerResponse> coldFlux(ServerRequest request) {
-        return null;
+        return ok().contentType(MediaType.TEXT_EVENT_STREAM).body(fibonacci, Long.class);
     }
 
     private Mono<ServerResponse> hotFlux(ServerRequest request) {
-        return null;
+        return ok().contentType(MediaType.TEXT_EVENT_STREAM).body( hotFlux, Long.class );
     }
 
     private Mono<ServerResponse> fastestResponder(ServerRequest request) {
 
-        return null;
+        return ok().contentType(MediaType.TEXT_PLAIN).body(
+                Flux.first(
+                        us_service.get().uri("/ping").retrieve().bodyToMono(String.class),
+                        eu_service.get().uri("/ping").retrieve().bodyToMono(String.class),
+                        asia_service.get().uri("/ping").retrieve().bodyToMono(String.class)), String.class);
     }
 
     /**
@@ -141,7 +145,18 @@ public class Service {
     private Mono<ServerResponse> suggestions(ServerRequest request) {
         String username = request.cookies().getFirst("username").getValue();
 
-        Flux<Book> suggestions = null;
+        Flux<Book> suggestions = recommendations_service.get().uri("/user/${username}/recommendations", username)
+                .retrieve()
+                .bodyToFlux(Book.class)
+                .timeout(Duration.ofMillis(100))
+                .onErrorResume( exception -> {
+                    if(exception instanceof TimeoutException)
+                        return cachedRecommendations(username);
+                    else
+                        return bestSellers();
+                } )
+                .switchIfEmpty( bestSellers() )
+                .take(5);
 
         return ok()
                 .contentType(MediaType.APPLICATION_JSON)
